@@ -77,6 +77,7 @@ const GlobalStyle = createGlobalStyle`
 --energy-dashBoard-tv-dark-400: #516873;
 --energy-dashBoard-tv-dark-500: #8299A4;
 --energy-dashBoard-tv-dark-600: #C4D5DD;
+--energy-dashBoard-tv-temp: #96A7AF;
 --energy-dashBoard-color-white: #FFFFFF;
 --energy-dashBoard-title-color: #000000;
 --energy-dashBoard-body-text-color-primary: #2C3449;
@@ -84,7 +85,7 @@ const GlobalStyle = createGlobalStyle`
 --energy-dashBoard-body-text-color-tertiary :#1D1D1D;
 --energy-usc-area-color-1: #3DD598;
 --energy-usc-tv-red: #FF565E;
---energy-usc-area-color-3: #FFC542;
+--energy-usc-tv-yellow: #FFC542;
 
 
 --energy-font-size-xxs: 10px;   /* Extra Small */

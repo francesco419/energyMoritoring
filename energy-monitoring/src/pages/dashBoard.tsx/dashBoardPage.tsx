@@ -8,11 +8,34 @@ import Image from "next/image";
 import styled from "styled-components";
 import dayjs from "dayjs";
 import { FlexArea } from "@/style/commonStyles";
+import { Doughnut } from "react-chartjs-2";
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 // import {
 //   CircularProgressbar,
 //   CircularProgressbarWithChildren,
 //   buildStyles,
 // } from "react-circular-progressbar";
+
+export const data = {
+  datasets: [
+    {
+      label: "# of Votes",
+      data: [3, 2, 1, 1.5],
+      backgroundColor: ["#3DD598", "#FFC542", "#FF565E", "#1D2A2F"],
+      borderColor: "none",
+      borderWidth: 0,
+      borderRadius: 9,
+    },
+  ],
+};
+
+const options = {
+  responsive: true,
+  maintainAspectRatio: false,
+  cutout: "80%", // 도넛 중앙 빈 공간을 늘려서 바를 얇게
+};
+
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 const DailyStatus = [
   {
@@ -29,7 +52,7 @@ const DailyStatus = [
   },
   {
     name: "중지",
-    color: "var(--energy-usc-area-color-3)",
+    color: "var(--energy-usc-tv-yellow)",
     img: "do_not_disturb_on",
     progress: 20,
   },
@@ -47,6 +70,104 @@ const AreaIntallData = [
   {
     name: "누적 사용량",
     value: "829.29 Gcal",
+  },
+];
+
+const ElectictData = [
+  {
+    id: 0,
+    max: "133px",
+    value: "85%",
+  },
+  {
+    id: 1,
+    max: "171px",
+    value: "80%",
+  },
+  {
+    id: 2,
+    max: "113.38px",
+    value: "90%",
+  },
+  {
+    id: 3,
+    max: "92.93px",
+    value: "40%",
+  },
+  {
+    id: 4,
+    max: "91.08px",
+    value: "60%",
+  },
+  {
+    id: 5,
+    max: "98.51px",
+    value: "85%",
+  },
+  {
+    id: 6,
+    max: "83.64px",
+    value: "70%",
+  },
+  {
+    id: 7,
+    max: "92.93px",
+    value: "30%",
+  },
+  {
+    id: 8,
+    max: "98.51px",
+    value: "90%",
+  },
+  {
+    id: 9,
+    max: "98.51px",
+    value: "90%",
+  },
+  {
+    id: 10,
+    max: "83.64px",
+    value: "60%",
+  },
+  {
+    id: 11,
+    max: "102.23px",
+    value: "25%",
+  },
+  {
+    id: 12,
+    max: "83.64px",
+    value: "70%",
+  },
+  {
+    id: 13,
+    max: "18.59px",
+    value: "0",
+  },
+  {
+    id: 14,
+    max: "18.59px",
+    value: "0",
+  },
+  {
+    id: 15,
+    max: "18.59px",
+    value: "0",
+  },
+  {
+    id: 16,
+    max: "18.59px",
+    value: "0",
+  },
+  {
+    id: 17,
+    max: "18.59px",
+    value: "0",
+  },
+  {
+    id: 18,
+    max: "18.59px",
+    value: "0",
   },
 ];
 
@@ -224,11 +345,13 @@ const HeadChangeArea = styled.div`
 
 const ElectProgress = styled.div`
   display: flex;
+  gap: 28.5px;
+  align-self: baseline;
   progress {
     position: relative;
     width: 405px;
-    transform-origin: 0 100%;
-    transform: rotate(90deg);
+    transform: rotate(-90deg) translateY(-1000%);
+    transform-origin: 100% 0%;
     &::-webkit-progress-bar {
       background: var(--energy-dashBoard-tv-dark-200);
       border-radius: 9px;
@@ -252,6 +375,24 @@ const ElectProgress = styled.div`
       background: var(--energy-dashBoard-tv-dark-500);
       border-radius: 9px;
     }
+  }
+`;
+
+const CustomProgress = styled.div<{ $percentage?: string; $max?: string }>`
+  display: flex;
+  height: ${(props) => (props.$max ? props.$max : "18.59px")};
+  width: 7px;
+  background-color: var(--energy-dashBoard-tv-dark-200);
+  border-radius: 9px;
+  align-items: end;
+  transition: all 1s;
+  margin: 0 0 30px;
+  div {
+    height: ${(props) => (props.$percentage ? props.$percentage : "0px")};
+    width: 7px;
+    background-color: var(--energy-usc-tv-yellow);
+    border-radius: 9px;
+    transition: all 1s;
   }
 `;
 
@@ -279,7 +420,7 @@ export default function Dashboard() {
             </DashBoardText>
           </FlexArea>
         </FlexArea>
-        <FlexArea $gap="30px">
+        <FlexArea $gap="30px" style={{ whiteSpace: "nowrap", width: "unset" }}>
           <DashBoardText size={44} color="white">
             {`${now.format("YYYY-MM-DD hh:mm:ss")} 업데이트`}
           </DashBoardText>
@@ -513,8 +654,83 @@ export default function Dashboard() {
                   );
                 })}
               </FlexArea>
-
+              {/**차트 */}
               <FlexArea
+                $justifyContent="center"
+                $gap="40px"
+                style={{
+                  backgroundColor: "var(--energy-dashBoard-tv-dark-300)",
+                  borderRadius: "20px",
+                  padding: "40px",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ width: "200px", height: "200px" }}>
+                  <Doughnut
+                    data={data}
+                    options={options}
+                    width={"200px"}
+                    height={"200px"}
+                  />
+                </div>
+                <FlexArea
+                  $flexDirection="column"
+                  $gap="16px"
+                  $alignItems="flex-start"
+                >
+                  <DashBoardText
+                    size={44}
+                    weight={700}
+                    color="white"
+                    lineHeight="52.51px"
+                  >
+                    운영 현황
+                  </DashBoardText>
+                  <FlexArea $gap="16px">
+                    <span
+                      style={{
+                        backgroundColor: "var(--energy-usc-area-color-1)",
+                        width: "36px",
+                        height: "22px",
+                        borderRadius: "14px",
+                      }}
+                    ></span>
+                    <DashBoardText size={31} color="white">
+                      정상가동 설비 1
+                    </DashBoardText>
+                  </FlexArea>
+                  <FlexArea $gap="16px">
+                    <span
+                      style={{
+                        backgroundColor: "var(--energy-usc-tv-red)",
+                        width: "36px",
+                        height: "22px",
+                        borderRadius: "14px",
+                      }}
+                    ></span>
+                    <DashBoardText size={31} color="white">
+                      오류 설비 2
+                    </DashBoardText>
+                  </FlexArea>
+                  <FlexArea $gap="16px">
+                    <span
+                      style={{
+                        backgroundColor: "var(--energy-usc-tv-yellow)",
+                        width: "36px",
+                        height: "22px",
+                        borderRadius: "14px",
+                      }}
+                    ></span>
+                    <DashBoardText size={31} color="white">
+                      중단 설비 1
+                    </DashBoardText>
+                  </FlexArea>
+                </FlexArea>
+              </FlexArea>
+              {/**월간 발전량 추이 그래프 */}
+              <FlexArea
+                $flexDirection="column"
+                $alignItems="flex-start"
                 $gap="40px"
                 $padding="40px"
                 style={{
@@ -531,12 +747,37 @@ export default function Dashboard() {
                   2025년 월간 평균 발전량 추이
                 </DashBoardText>
                 <ElectProgress>
-                  <progress value={50} max={100} />
-                  <progress value={50} max={100} />
-                  <progress value={50} max={100} />
-                  <progress value={50} max={100} />
-                  <progress value={50} max={100} />
-                  <progress value={50} max={100} />
+                  {ElectictData.map((electric, idx) => {
+                    return (
+                      <div
+                        style={{
+                          position: "relative",
+                          display: "flex",
+                          alignItems: "end",
+                        }}
+                        key={`electric_${electric.value}-${idx}`}
+                      >
+                        <CustomProgress
+                          $percentage={electric.value}
+                          $max={electric.max}
+                        >
+                          <div />
+                        </CustomProgress>
+                        <DashBoardText
+                          size={28}
+                          color={"var(--energy-dashBoard-tv-temp)"}
+                          style={{
+                            position: "absolute",
+                            bottom: "-10px",
+                            right: "33px",
+                            textAlign: "center",
+                          }}
+                        >
+                          {[1, 7, 14].includes(idx) ? idx.toString() : ""}
+                        </DashBoardText>
+                      </div>
+                    );
+                  })}
                 </ElectProgress>
               </FlexArea>
             </FlexArea>
