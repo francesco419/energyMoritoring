@@ -45,6 +45,7 @@ const ParagraphStyle = styled.p<{
   $weight?: number;
   $lineHeight?: string;
   $margin?: string;
+  $inline?: boolean;
 }>`
   //색상
   color: ${(props) =>
@@ -61,6 +62,7 @@ const ParagraphStyle = styled.p<{
   word-break: keep-all;
   line-height: ${(props) => (props.$lineHeight ? props.$lineHeight : 1)};
   margin: ${(props) => (props.$margin ? props.$margin : "unset")};
+  display: ${(props) => (props.$inline ? "inline" : "block")};
 `;
 
 interface ComponentBasicProps {
@@ -75,6 +77,7 @@ interface DashBoardTextProps extends ComponentBasicProps {
   size?: number;
   lineHeight?: string;
   margin?: string;
+  inline?: boolean;
 }
 
 export default function DashBoardText({
@@ -86,6 +89,7 @@ export default function DashBoardText({
   weight,
   lineHeight,
   margin,
+  inline,
 }: DashBoardTextProps) {
   return (
     <ParagraphStyle
@@ -96,6 +100,7 @@ export default function DashBoardText({
       $weight={weight}
       $lineHeight={lineHeight}
       $margin={margin}
+      $inline={inline}
     >
       {children}
     </ParagraphStyle>

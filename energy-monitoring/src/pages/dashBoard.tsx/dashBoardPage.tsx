@@ -6,10 +6,16 @@ import DashBoardText from "@/components/common/pTag";
 import MapImg from "@/components/mapImg";
 import Image from "next/image";
 import styled from "styled-components";
-import dayjs from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
 import { FlexArea } from "@/style/commonStyles";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { useEffect, useState } from "react";
+import { countBy, random, sum, sumBy } from "lodash";
+import { AreaElectData } from "@/config/dashBoardData";
+import ProgressBar from "@/components/progress/progressBar";
+import { useInterval } from "usehooks-ts";
+import RealTimeAlarm from "./components/realTimeAlarm";
 // import {
 //   CircularProgressbar,
 //   CircularProgressbarWithChildren,
@@ -207,6 +213,7 @@ const DashBoardInfo = styled.div`
   border-radius: 30px;
   padding: 50px;
   gap: 50px;
+  z-index: 10;
 `;
 
 const DashBoardTodayStatus = styled(DashBoardInfo)`
@@ -265,24 +272,6 @@ const DashBoardDetailChild = styled.div`
   border-radius: 30px;
   padding: 50px;
   gap: 50px;
-`;
-
-const RealTimeAlarm = styled.div`
-  display: flex;
-  border-radius: 20px;
-  padding: 40px;
-  gap: 30px;
-  background-color: var(--energy-dashBoard-tv-dark-300);
-  width: 770px;
-  span {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background-color: var(--energy-usc-tv-red);
-  }
 `;
 
 const AlarmHead = styled.div`
@@ -401,6 +390,78 @@ export default function Dashboard() {
   //const data = [65, 59, 80, 81, 56]; // y축 값
   const now = dayjs();
 
+  const [refresh, setRefresh] = useState<number>(0);
+  const [lastRefresh, setLastRefresh] = useState<Dayjs>();
+  const [mapData, setMapData] = useState<AreaElectData[]>([]);
+  const [totalManage, setTotalManage] = useState<{
+    total: number;
+    good: number;
+    bad: number;
+    stop: number;
+  }>({ total: 0, good: 0, bad: 0, stop: 0 });
+
+  useEffect(() => {
+    setLastRefresh(dayjs());
+  }, [refresh]);
+
+  const tempSetTime = 5000; //64000
+
+  useInterval(() => {
+    //interval 시작 시간
+    const presentTime = dayjs();
+    //5분 경과되면
+    if (presentTime.diff(lastRefresh) >= tempSetTime) {
+      //밀리 초 => 1000 = 1초
+      setRefresh(random(0, 100));
+    }
+  }, tempSetTime);
+
+  function getMapData(data: AreaElectData[]) {
+    setMapData(data);
+    const analysis = countBy(data, "status");
+
+    const tempManage = {
+      total: data.length,
+      good: analysis["0"],
+      bad: analysis["1"],
+      stop: analysis["2"],
+    };
+
+    setTotalManage(tempManage);
+  }
+
+  const AlarmContainer = styled(FlexArea)`
+    overflow-y: scroll;
+    max-height: 384px;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  `;
+
+  function getPercentage(child: number, parent: number) {
+    console.log(child);
+    if (child === undefined) {
+      return 0;
+    }
+    return parseInt(((child / parent) * 100).toFixed(0));
+  }
+
+  function kiloWattConvertor(watt: number) {
+    const val = parseFloat(watt.toFixed(2));
+    if (val >= 1000) {
+      return `${(val / 1000).toFixed(2)}Gcal`;
+    } else {
+      return val + "MW";
+    }
+  }
+
+  function tempKiloWattConvertor(watt: number) {
+    return (watt * 0.86).toFixed(2) + "Gcal";
+  }
+
+  //console.log(mapData);
+  console.log(totalManage);
+
   return (
     <DashBoardWrapper>
       <DashBoardHeader>
@@ -434,13 +495,17 @@ export default function Dashboard() {
               style={{ padding: "12px" }}
               onClick={() => {
                 //refreshButton
+                const presentTime = dayjs();
+                if (presentTime.diff(lastRefresh) > 3000000) {
+                }
+                setRefresh(random(0, 100));
               }}
             >
               <Image
                 src="/images/restart_alt.svg"
                 width={60}
                 height={60}
-                alt="dashBaordRefresh"
+                alt="dashBoardRefresh"
               />
             </button>
           </div>
@@ -455,10 +520,18 @@ export default function Dashboard() {
             color="white"
             lineHeight="62.05px"
           >
-            태양광 금일 운영 현황 (총 300개)
+            {`태양광 금일 운영 현황 (총 ${totalManage.total}개)`}
           </DashBoardText>
           <FlexArea $gap="40px">
             {DailyStatus.map((status, idx) => {
+              const perentage = getPercentage(
+                idx === 0
+                  ? totalManage.good
+                  : idx === 1
+                  ? totalManage.bad
+                  : totalManage.stop,
+                totalManage.total
+              );
               return (
                 <TodayStatusBox
                   key={`dashBoardDailyStatus-${idx}`}
@@ -489,10 +562,11 @@ export default function Dashboard() {
                         lineHeight="40.57px"
                         style={{ float: "right" }}
                       >
-                        {`${status.progress}%`}
+                        {`${perentage}%`}
                       </DashBoardText>
                     </FlexArea>
-                    <progress value={status.progress} max={100} />
+                    {/* <progress value={perentage} max={100} /> */}
+                    <ProgressBar target={perentage} duration={1000} />
                   </div>
                 </TodayStatusBox>
               );
@@ -543,48 +617,19 @@ export default function Dashboard() {
                 실시간 알림
               </DashBoardText>
             </AlarmHead>
-            <FlexArea $flexDirection="column" $gap="24px">
-              {[1, 2].map((x, idx) => {
-                return (
-                  <RealTimeAlarm key={`${x}-${idx}`}>
-                    <span>
-                      <Image
-                        src={`/images/error.svg`}
-                        width={50}
-                        height={50}
-                        alt={"알람"}
-                      />
-                    </span>
-                    <div style={{ flexGrow: 1 }}>
-                      <FlexArea $justifyContent="space-between">
-                        <DashBoardText
-                          size={34}
-                          weight={700}
-                          color="white"
-                          lineHeight="40.57px"
-                        >
-                          오류알림
-                        </DashBoardText>
-                        <DashBoardText
-                          size={26}
-                          color="var(--energy-dashBoard-tv-dark-600)"
-                        >
-                          4:20PM
-                        </DashBoardText>
-                      </FlexArea>
-                      <DashBoardText
-                        size={31}
-                        color="var(--energy-dashBoard-tv-dark-600)"
-                        margin="20px 0 0 "
-                        lineHeight="36.99px"
-                      >
-                        다인면 23A689기계 작동 오류
-                      </DashBoardText>
-                    </div>
-                  </RealTimeAlarm>
-                );
+            <AlarmContainer
+              $flexDirection="column"
+              $gap="24px"
+              style={{ overflowY: "scroll", maxHeight: "384px" }}
+            >
+              {mapData.map((data, idx) => {
+                if (data.status === 1) {
+                  return (
+                    <RealTimeAlarm name={data.name} key={`${data}-${idx}`} />
+                  );
+                }
               })}
-            </FlexArea>
+            </AlarmContainer>
           </DashBoardDetailChild>
           {/**상세정보 */}
           <DashBoardDetailChild>
@@ -644,11 +689,13 @@ export default function Dashboard() {
                           color="white"
                           margin="0 0 15px"
                         >{`${data.name}`}</DashBoardText>
-                        <DashBoardText
-                          weight={700}
-                          size={34}
-                          color="white"
-                        >{`${data.value}`}</DashBoardText>
+                        <DashBoardText weight={700} size={34} color="white">{`${
+                          idx === 0
+                            ? `${totalManage.total}개`
+                            : idx === 1
+                            ? kiloWattConvertor(sumBy(mapData, "intall"))
+                            : tempKiloWattConvertor(sumBy(mapData, "electric"))
+                        }`}</DashBoardText>
                       </div>
                     </>
                   );
@@ -667,7 +714,27 @@ export default function Dashboard() {
               >
                 <div style={{ width: "200px", height: "200px" }}>
                   <Doughnut
-                    data={data}
+                    data={{
+                      datasets: [
+                        {
+                          label: "# of Votes",
+                          data: [
+                            totalManage.good,
+                            totalManage.bad,
+                            totalManage.stop,
+                          ],
+                          backgroundColor: [
+                            "#3DD598",
+                            "#FFC542",
+                            "#FF565E",
+                            "#1D2A2F",
+                          ],
+                          borderColor: "none",
+                          borderWidth: 0,
+                          borderRadius: 9,
+                        },
+                      ],
+                    }}
                     options={options}
                     width={"200px"}
                     height={"200px"}
@@ -696,7 +763,7 @@ export default function Dashboard() {
                       }}
                     ></span>
                     <DashBoardText size={31} color="white">
-                      정상가동 설비 1
+                      {`정상가동 설비 ${totalManage.good}`}
                     </DashBoardText>
                   </FlexArea>
                   <FlexArea $gap="16px">
@@ -709,7 +776,7 @@ export default function Dashboard() {
                       }}
                     ></span>
                     <DashBoardText size={31} color="white">
-                      오류 설비 2
+                      {`오류 설비 ${totalManage.bad}`}
                     </DashBoardText>
                   </FlexArea>
                   <FlexArea $gap="16px">
@@ -722,7 +789,7 @@ export default function Dashboard() {
                       }}
                     ></span>
                     <DashBoardText size={31} color="white">
-                      중단 설비 1
+                      {`중단 설비 ${totalManage.stop}`}
                     </DashBoardText>
                   </FlexArea>
                 </FlexArea>
@@ -784,91 +851,9 @@ export default function Dashboard() {
           </DashBoardDetailChild>
         </DashBoardDetail>
         <div style={{ margin: "156px 0 0 200px" }}>
-          <MapImg />
+          <MapImg refresh={refresh} sendData={getMapData} />
         </div>
       </DashBoardContent>
     </DashBoardWrapper>
   );
 }
-
-// <CircularProgressChart
-//         size={"450px"}
-//         value={68}
-//         pathColor={"#25C685"}
-//         trailColor={"#D4F5E9"}
-//         textColor={"#000000"}
-//         strokeLinecap={"butt"}
-//         fontSize={"16px"}
-//         strokeWidthPath={20}
-//         strokeWidthTrail={20}
-//       />
-//       <CircularProgressChart
-//         size={"450px"}
-//         value={100}
-//         pathColor={"#25C685"}
-//         trailColor={"#D4F5E9"}
-//         textColor={"#000000"}
-//         strokeLinecap={"butt"}
-//         fontSize={"16px"}
-//         strokeWidthPath={10}
-//         strokeWidthTrail={10}
-//         background="#ffb0b0"
-//       />
-//       <CircularProgressChart
-//         size={"450px"}
-//         value={68}
-//         pathColor={"#25C685"}
-//         trailColor={"#D4F5E9"}
-//         strokeLinecap={"butt"}
-//         strokeWidthPath={40}
-//         strokeWidthTrail={40}
-//         WithChildren={true}
-//         textColor="#000000"
-//         fontSize="16px"
-//       >
-//         {/* 자식 요소를 이곳에 추가 */}
-//         <div
-//           style={{
-//             width: "250px",
-//             height: "250px",
-//             borderRadius: "100%",
-//             display: "flex",
-//             alignItems: "center",
-//             justifyContent: "center",
-//             background: "#ffffff",
-//             boxShadow: "0px 34.49px 71.01px 0px #0000001F",
-//           }}
-//         ></div>
-//         {/* 또는 자식 요소를 원하는대로 추가 */}
-//       </CircularProgressChart>
-//       <BarChart
-//         size={{ width: "1500px", height: "1500px" }}
-//         label={"test"}
-//         labels={labels}
-//         value={data}
-//         backgroundColor="yellow"
-//         borderColor="#000"
-//         borderWidth={1}
-//       />
-
-// <div>
-//                 <CircularProgressbarWithChildren
-//                   value={80}
-//                   styles={buildStyles({
-//                     pathColor: "#f00",
-//                     //trailColor: "#eee",
-//                     strokeLinecap: "butt",
-//                   })}
-//                 >
-//                   {/* Foreground path */}
-//                   <CircularProgressbar
-//                     value={70}
-//                     styles={buildStyles({
-//                       pathColor: "#000",
-//                       trailColor: "transparent",
-//                       strokeLinecap: "butt",
-//                     })}
-//                   />
-//                 </CircularProgressbarWithChildren>
-
-//               </div>

@@ -79,10 +79,7 @@ const GlobalStyle = createGlobalStyle`
 --energy-dashBoard-tv-dark-600: #C4D5DD;
 --energy-dashBoard-tv-temp: #96A7AF;
 --energy-dashBoard-color-white: #FFFFFF;
---energy-dashBoard-title-color: #000000;
---energy-dashBoard-body-text-color-primary: #2C3449;
---energy-dashBoard-body-text-color-secondary: #C4D5DD;
---energy-dashBoard-body-text-color-tertiary :#1D1D1D;
+--energy-dashBoard-tv-light-grey: #F2F2F2;
 --energy-usc-area-color-1: #3DD598;
 --energy-usc-tv-red: #FF565E;
 --energy-usc-tv-yellow: #FFC542;
